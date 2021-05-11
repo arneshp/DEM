@@ -286,6 +286,10 @@ void Fix_swelling::pre_force(int vflag)
  double tdelay_ref;
  double dt = update->dt;
  int nlocal = atom->nlocal;
+ 
+ 
+ double excess_vol;
+ 
    for (int i=0; i<nlocal; i++)
    {
        tdelay_ref = -log(1-alpha[i])*tau_ref;
@@ -293,6 +297,10 @@ void Fix_swelling::pre_force(int vflag)
    	{
    	  Sdim[i] = Sdim[i]+ K0*pow((1-alpha[i]),0.5)*pow((Temp[i]-Tmin)/(Tref-Tmin),2)*(1-Sdim[i])*dt ;
    	  radius[i] = iradi[i]*(Swratio[i]-1)*Sdim[i] + iradi[i];
+   	  excess_vol = 4.0*3.14159/3.0 * atom->radius[i]*atom->radius[i]*atom->radius[i] - 4.0*3.14159/3.0*iradi[i]*iradi[i]*iradi[i];
+   	  
+   	  atom->rmass[i] = 4.0*3.14159/3.0 * iradi[i]*iradi[i]*iradi[i]*1.2 + excess_vol*1;
+   	  atom->density[i] = atom->rmass[i]/(4.0*3.14159/3.0 * atom->radius[i]*atom->radius[i]*atom->radius[i]);   	   
    	    	}
    	else 
    	{ if (Temp[i]>Tmin) 
