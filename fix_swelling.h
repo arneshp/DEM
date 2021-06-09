@@ -63,12 +63,12 @@ namespace LAMMPS_NS {
     Fix_swelling(class LAMMPS *, int, char **);
     ~Fix_swelling(){};
     virtual void post_create();
-    virtual void pre_delete(bool unfixflag){ UNUSED(unfixflag); };
+    virtual void pre_delete(bool unfixflag){ UNUSED(unfixflag);};
 
     
     virtual int setmask();
     virtual void init();
-    virtual void pre_force(int vflag);
+    virtual void post_integrate();
     
     // per default these three methods throw errors.
     virtual void updatePtrs();
@@ -82,6 +82,9 @@ namespace LAMMPS_NS {
     class FixPropertyAtom* fix_Sdim;
     class FixPropertyAtom* fix_Swratio;
     class FixPropertyAtom* fix_iradi;
+    class FixPropertyGlobal* fix_densityp;
+    class FixPropertyGlobal* fix_densityf;
+    
 
     
     double *Temp;       
@@ -90,7 +93,8 @@ namespace LAMMPS_NS {
     double *Sdim;
     double *Swratio;
     double *iradi;
-    double T0,K0,tau_ref,Tref,Tmin;          
+    double T0,K0,tau_ref,Tref,Tmin;
+            
    
 
     class PairGran *pair_gran;

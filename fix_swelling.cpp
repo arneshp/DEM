@@ -87,6 +87,12 @@ Fix_swelling::Fix_swelling(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, a
   fix_tdelayelapsed = NULL;
   fix_alpha = NULL;
   fix_temp = NULL;
+  fix_Sdim = NULL;
+  fix_Swratio = NULL;
+  fix_iradi = NULL;
+  fix_densityp = NULL;
+  fix_densityf = NULL;
+  
   peratom_flag = 1;      
   size_peratom_cols = 0; 
   peratom_freq = 1;
@@ -94,6 +100,7 @@ Fix_swelling::Fix_swelling(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, a
   scalar_flag = 1; 
   global_freq = 1; 
 
+  rad_mass_vary_flag = 1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -111,7 +118,7 @@ void Fix_swelling::post_create()
     fixarg[2]="property/atom";
     fixarg[3]="tdelayelapsed";
     fixarg[4]="scalar";
-    fixarg[5]="no";
+    fixarg[5]="yes";
     fixarg[6]="yes";
     fixarg[7]="no";
     fixarg[8]="0.";
@@ -127,7 +134,7 @@ void Fix_swelling::post_create()
     fixarg[2]="property/atom";
     fixarg[3]="alpha";
     fixarg[4]="scalar";
-    fixarg[5]="no";
+    fixarg[5]="yes";
     fixarg[6]="yes";
     fixarg[7]="no";
     fixarg[8]="0.";
@@ -135,7 +142,7 @@ void Fix_swelling::post_create()
     fix_alpha = modify->add_fix_property_atom(9,const_cast<char**>(fixarg),style);  // This is the line that is adding the new atom/property.  
   }
 
- //if(!fix_Sdim)
+ if(!fix_Sdim)
   {
     const char* fixarg[9];
     fixarg[0]="Sdim";   // This part is similar to defining a fix statement from the input script. so this fix defines the variable Sdim-Nondimensional diameter  by default. 
@@ -143,7 +150,7 @@ void Fix_swelling::post_create()
     fixarg[2]="property/atom";
     fixarg[3]="Sdim";
     fixarg[4]="scalar";
-    fixarg[5]="no";
+    fixarg[5]="yes";
     fixarg[6]="yes";
     fixarg[7]="no";
     fixarg[8]="0.";
@@ -152,7 +159,7 @@ void Fix_swelling::post_create()
   }
 
 
- //if(!fix_Swratio)
+ if(!fix_Swratio)
   {
     const char* fixarg[9];
     fixarg[0]="Swratio";   // This part is similar to defining a fix statement from the input script. so this fix defines the variable Swratio-Swelling ratio by default. 
@@ -160,7 +167,7 @@ void Fix_swelling::post_create()
     fixarg[2]="property/atom";
     fixarg[3]="Swratio";
     fixarg[4]="scalar";
-    fixarg[5]="no";
+    fixarg[5]="yes";
     fixarg[6]="yes";
     fixarg[7]="no";
     fixarg[8]="0.";
@@ -168,7 +175,7 @@ void Fix_swelling::post_create()
     fix_Swratio= modify->add_fix_property_atom(9,const_cast<char**>(fixarg),style);  // This is the line that is adding the new atom/property.  
   }
 
- //if(!fix_iradi)
+ if(!fix_iradi)
   {
     const char* fixarg[9];
     fixarg[0]="iradi";   // This part is similar to defining a fix statement from the input script. so this fix defines the variable iradi-initial radius by default. 
@@ -176,7 +183,7 @@ void Fix_swelling::post_create()
     fixarg[2]="property/atom";
     fixarg[3]="iradi";
     fixarg[4]="scalar";
-    fixarg[5]="no";
+    fixarg[5]="yes";
     fixarg[6]="yes";
     fixarg[7]="no";
     fixarg[8]="0.0001";
@@ -192,6 +199,11 @@ void Fix_swelling::post_create()
   fix_Sdim = static_cast<FixPropertyAtom*>(modify->find_fix_property("Sdim", "property/atom", "scalar",0,0,style));
   fix_Swratio = static_cast<FixPropertyAtom*>(modify->find_fix_property("Swratio", "property/atom", "scalar",0,0,style));
   fix_iradi = static_cast<FixPropertyAtom*>(modify->find_fix_property("iradi", "property/atom", "scalar",0,0,style));
+  fix_densityp = static_cast<FixPropertyGlobal*>(modify->find_fix_property("densityp", "property/global", "scalar",0,0,style));
+  fix_densityf = static_cast<FixPropertyGlobal*>(modify->find_fix_property("densityf", "property/global", "scalar",0,0,style));
+
+  if(!fix_densityp || !fix_densityf)
+  error->one(FLERR, "fix swelling requires global properties density of particle 'densityp' and density of fluid 'densityf' to be defined");  
 
   if(!fix_temp || !fix_tdelayelapsed || !fix_alpha || !fix_Sdim || !fix_Swratio || !fix_iradi)
     error->one(FLERR,"internal error");
@@ -209,6 +221,7 @@ void Fix_swelling::updatePtrs()
   Sdim = fix_Sdim->vector_atom;
   Swratio = fix_Swratio->vector_atom;
   iradi = fix_iradi->vector_atom;
+  
 }
 
 /* ---------------------------------------------------------------------- */
@@ -267,7 +280,7 @@ int Fix_swelling::setmask()
 {
   int mask = 0;
   mask |= INITIAL_INTEGRATE;
-  mask |= PRE_FORCE;
+  mask |= POST_INTEGRATE;
   return mask;
 }
 
@@ -279,7 +292,7 @@ int Fix_swelling::setmask()
 
 
 
-void Fix_swelling::pre_force(int vflag) 
+void Fix_swelling::post_integrate() 
 {
   updatePtrs();
  double *radius = atom->radius;
@@ -287,8 +300,13 @@ void Fix_swelling::pre_force(int vflag)
  double dt = update->dt;
  int nlocal = atom->nlocal;
  
+ double excess_vol, mass_old;
  
- double excess_vol;
+ double densityp, densityf;
+
+ densityp = fix_densityp->get_values()[0];
+ densityf = fix_densityf->get_values()[0]; 
+ 
  
    for (int i=0; i<nlocal; i++)
    {
@@ -299,8 +317,15 @@ void Fix_swelling::pre_force(int vflag)
    	  radius[i] = iradi[i]*(Swratio[i]-1)*Sdim[i] + iradi[i];
    	  excess_vol = 4.0*3.14159/3.0 * atom->radius[i]*atom->radius[i]*atom->radius[i] - 4.0*3.14159/3.0*iradi[i]*iradi[i]*iradi[i];
    	  
-   	  atom->rmass[i] = 4.0*3.14159/3.0 * iradi[i]*iradi[i]*iradi[i]*1.2 + excess_vol*1;
+   	  mass_old = atom->rmass[i];
+   	  
+   	  atom->rmass[i] = 4.0*3.14159/3.0 * iradi[i]*iradi[i]*iradi[i]*densityp + excess_vol*densityf;
    	  atom->density[i] = atom->rmass[i]/(4.0*3.14159/3.0 * atom->radius[i]*atom->radius[i]*atom->radius[i]);   	   
+   	    	
+   	  atom->v[i][0] = atom->v[i][0]*sqrt(mass_old/(atom->rmass[i]));
+   	  atom->v[i][1] = atom->v[i][1]*sqrt(mass_old/(atom->rmass[i]));
+   	  atom->v[i][2] = atom->v[i][2]*sqrt(mass_old/(atom->rmass[i])); 
+   	    	
    	    	}
    	else 
    	{ if (Temp[i]>Tmin) 
