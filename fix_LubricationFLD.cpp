@@ -282,12 +282,20 @@ void Fix_LubricationFLD::post_force(int vflag)
 
       if (shearing) {
         vRS0 = -RS0*radi3;
-                       Ef[0][0] = vRS0*Ef[0][0];
+		
+		// FLD contribution to force and torque due to isotropic terms
+    // FLD contribution to stress from isotropic RS0
+
+		
+		//Pair::v_tally_tensor(i,i,nlocal,newton_pair,
+        //               vRS0*Ef[0][0],vRS0*Ef[1][1],vRS0*Ef[2][2],
+         //              vRS0*Ef[0][1],vRS0*Ef[0][2],vRS0*Ef[1][2]);
+                   /*    Ef[0][0] = vRS0*Ef[0][0];
 					   Ef[1][1] = vRS0*Ef[1][1];
 					   Ef[2][2] = vRS0*Ef[2][2],
                       Ef[1][0] = Ef[0][1] = vRS0*Ef[0][1],
 					  Ef[2][0] = Ef[0][2] = vRS0*Ef[0][2],
-					  Ef[1][2] = Ef[2][1] = vRS0*Ef[1][2];
+					  Ef[1][2] = Ef[2][1] = vRS0*Ef[1][2]; */
       }
 	
 	}
@@ -312,32 +320,8 @@ void Fix_LubricationFLD::post_force(int vflag)
     wi[1] = omega[i][1];
     wi[2] = omega[i][2];
 
-    // FLD contribution to force and torque due to isotropic terms
-    // FLD contribution to stress from isotropic RS0
-
-    if (flagfld) {
-      f[i][0] -= R0*radi*v[i][0];
-      f[i][1] -= R0*radi*v[i][1];
-      f[i][2] -= R0*radi*v[i][2];
-      const double radi3 = radi*radi*radi;
-      torque[i][0] -= RT0*radi3*wi[0];
-      torque[i][1] -= RT0*radi3*wi[1];
-      torque[i][2] -= RT0*radi3*wi[2];
-
-      if (shearing) {
-        vRS0 = -RS0*radi3;
-		//Pair::v_tally_tensor(i,i,nlocal,newton_pair,
-        //               vRS0*Ef[0][0],vRS0*Ef[1][1],vRS0*Ef[2][2],
-         //              vRS0*Ef[0][1],vRS0*Ef[0][2],vRS0*Ef[1][2]);
-		
-                       Ef[0][0] = vRS0*Ef[0][0];
-					   Ef[1][1] = vRS0*Ef[1][1];
-					   Ef[2][2] = vRS0*Ef[2][2],
-                      Ef[1][0] = Ef[0][1] = vRS0*Ef[0][1],
-					  Ef[2][0] = Ef[0][2] = vRS0*Ef[0][2],
-					  Ef[1][2] = Ef[2][1] = vRS0*Ef[1][2]; 
-      }
-    }
+    
+    
 
 
 
