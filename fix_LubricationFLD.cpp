@@ -199,10 +199,11 @@ void Fix_LubricationFLD::post_force(int vflag)
   int newton_pair = force->newton_pair;
   
   
-  pair_gran = static_cast<PairGran*>(force->pair_match("gran", 1));
+  pair_gran = static_cast<PairGran*>(force->pair_match("gran", 0));
   NeighList *list = pair_gran->list;
   
-
+  pair = static_cast<Pair*>(force->pair_match("gran", 0));
+  //int newton_pair = pair->newton_pair;
 
   inum = list->inum;
   ilist = list->ilist;
@@ -280,22 +281,16 @@ void Fix_LubricationFLD::post_force(int vflag)
       torque[i][1] -= RT0*radi3*wi[1];
       torque[i][2] -= RT0*radi3*wi[2];
 
+	
+
       if (shearing) {
         vRS0 = -RS0*radi3;
-		
-		// FLD contribution to force and torque due to isotropic terms
-    // FLD contribution to stress from isotropic RS0
-
-		
-		//Pair::v_tally_tensor(i,i,nlocal,newton_pair,
-        //               vRS0*Ef[0][0],vRS0*Ef[1][1],vRS0*Ef[2][2],
-         //              vRS0*Ef[0][1],vRS0*Ef[0][2],vRS0*Ef[1][2]);
-                   /*    Ef[0][0] = vRS0*Ef[0][0];
-					   Ef[1][1] = vRS0*Ef[1][1];
-					   Ef[2][2] = vRS0*Ef[2][2],
-                      Ef[1][0] = Ef[0][1] = vRS0*Ef[0][1],
-					  Ef[2][0] = Ef[0][2] = vRS0*Ef[0][2],
-					  Ef[1][2] = Ef[2][1] = vRS0*Ef[1][2]; */
+	
+	
+	Pair::v_tally_tensor(i,i,nlocal,newton_pair,
+                       vRS0*Ef[0][0],vRS0*Ef[1][1],vRS0*Ef[2][2],
+                      vRS0*Ef[0][1],vRS0*Ef[0][2],vRS0*Ef[1][2]);
+              
       }
 	
 	}
