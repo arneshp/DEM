@@ -162,6 +162,7 @@ int Fix_LubricationFLD::setmask()
 {
   int mask = 0;
   //mask |= INIT;
+  //mask |= PRE_FORCE;
   mask |= POST_FORCE;
   //mask |= min_setup;
   return mask;
@@ -287,7 +288,7 @@ void Fix_LubricationFLD::post_force(int vflag)
         vRS0 = -RS0*radi3;
 	
 	
-	Pair::v_tally_tensor(i,i,nlocal,newton_pair,
+	pair->v_tally_tensor(i,i,nlocal,newton_pair,
                        vRS0*Ef[0][0],vRS0*Ef[1][1],vRS0*Ef[2][2],
                       vRS0*Ef[0][1],vRS0*Ef[0][2],vRS0*Ef[1][2]);
               
