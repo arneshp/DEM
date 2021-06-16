@@ -330,6 +330,7 @@ void Fix::v_tally_xyz(int i, int j, int nlocal, int newton_pair,
                         double fx, double fy, double fz,
                         double delx, double dely, double delz)
 {
+     double v[6];
   
     v[0] = delx*fx;
     v[1] = dely*fy;
