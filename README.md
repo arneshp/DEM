@@ -1,4 +1,4 @@
-# DEM
+#### DEM
 LIGGGHTS files used for DEM simulation.
 
 Lubrication implementation in LIGGGHTS Based on Ball and melrose 1997. 
@@ -36,5 +36,8 @@ The stress contribution due to lubrication forces is calculated here, which can 
 compute pressure with keyword pair gives the contributions due to the contact models (say Hertz).
 
 
+######################################################################
 
+
+work-in progress to implement variable friction contact model proposed by lorby et al 2019. 
 
