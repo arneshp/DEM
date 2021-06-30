@@ -1,0 +1,128 @@
+echo both 
+log swelling.liggghts
+thermo_log thermo_swelling.txt
+
+
+atom_style granular 
+atom_modify map array
+boundary p p p
+newton off
+
+communicate single vel yes
+
+units cgs 
+
+region          reg block 0. 1 0. 1 0. 1. units box
+create_box      1 reg
+
+
+create_atoms 1 single 0.4 0.545 0.5 
+create_atoms 1 single 0.3 0.5 0.5 
+create_atoms 1 single 0.2 0.535 0.5 
+create_atoms 1 single 0.1 0.55 0.5 
+create_atoms 1 single 0.7 0.535 0.5 
+
+
+set atom 1 type 1 vx -0.001 vy 0 vz 0 diameter 0.022 density 1.2
+set atom 2 type 1 vx -0.001 vy 0 vz 0 diameter 0.022 density 1.2 
+set atom 3 type 1 vx 0.001 vy 0 vz 0 diameter 0.022 density 1.2
+set atom 4 type 1 vx 0.001 vy 0 vz 0 diameter 0.022 density 1.2 
+set atom 5 type 1 vx 0.001 vy 0 vz 0 diameter 0.022 density 1.2
+
+neighbor 0.01 bin 
+neigh_modify delay 0
+
+soft_particles yes
+
+#Required material properties 
+
+fix         m1 all property/global youngsModulus peratomtype 1.2e3 
+fix         m2 all property/global poissonsRatio peratomtype 0.45    
+fix         m3 all property/global coefficientRestitution peratomtypepair 1  1 
+
+fix         m4 all property/global coefficientFriction peratomtypepair 1 0.5
+fix 	    m5 all property/global fluiddensity scalar 1.
+   
+fix 		m7 all property/global minSeparationDistanceRatio scalar 1.01
+fix 		m8 all property/global maxSeparationDistanceRatio scalar 1.1
+fix 		m9 all property/global fluidViscosity scalar 4.02e-2
+fix 		m10 all property/global ShearTerm scalar 1.0 
+fix 		m11 all property/global SqueezeTerm scalar 1.0
+fix 		m12 all property/global PumpTerm scalar 1.0
+fix 		m13 all property/global ActivateTorque scalar 1.0
+fix 		m14 all property/global VolCorrection scalar 1.0
+fix 		m15 all property/global FLD scalar 0.0
+fix 		m16 all property/global bmin scalar 0.00001
+fix 		m17 all property/global bmax scalar 0.0001
+fix 		m18 all property/global shc scalar 10000
+
+fix Temp all property/atom Temp scalar no no no 1.0 
+
+
+#New pair style
+pair_style gran model hertz tangential history cohesion LUBRICATION # Hertzian with lubrication.
+pair_coeff  * *
+
+timestep  1e-4
+
+
+#fix ywalls1 all wall/gran model hertz tangential history primitive type 1 xplane 0.0
+#fix ywalls2 all wall/gran model hertz tangential history primitive type 1 xplane 0.1
+
+# heat transfer
+fix         ftco all property/global thermalConductivity peratomtype 0.001433076 # lambda in [W/(K*m)]
+fix         ftca all property/global thermalCapacity peratomtype 1.    # cp in [J/(kg*K)]
+fix         heattransfer all heat/gran initial_temperature 363.
+
+
+#fix Sdim all property/atom Sdim scalar no yes no 0.
+#fix Swratio all property/atom Swratio scalar no yes no 0.
+#fix iradi all property/atom iradi scalar no yes no 0. 
+
+
+fix         swelling all swelling K0 0.0023 tau_ref 190. Min_temperature 333. Reference_temperature 335. 
+
+#region      bc block 0. 0.1 0. 0.1 0. 1.1 units box
+#fix         pts1 all particletemplate/sphere 15485863 atom_type 1 density constant 1.2 radius constant 0.011
+#fix         pdd1 all particledistribution/discrete 15485867 1 pts1 1.0
+
+#fix         ins all insert/pack seed 32452843 distributiontemplate pdd1 vel constant 0. 0. -3. insert_every 10000 overlapcheck yes all_in yes particles_in_region 1005 region bc
+
+
+fix     integr all nve/sphere
+
+run 1
+
+#set particle temperature for half the bed
+region		halfbed block 0 0.25 0 0.5 0 0.5 units box 
+set             region halfbed property/atom Temp 353.
+
+# screen output
+compute 1 all erotate/sphere
+compute 3 all temp
+compute 4 all pressure 3
+compute 5 all contact/atom
+
+thermo_style custom step atoms c_4[4] vol ke
+thermo 100
+thermo_modify lost ignore norm no
+compute_modify thermo_temp dynamic yes
+
+
+
+
+
+
+
+
+
+dump    dmp1 all custom/vtk 5000 post2/liggghts_part2_*.vtk id type type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius c_5 f_Temp f_Sdim f_Swratio f_alpha f_tdelayelapsed f_iradi mass density 
+
+dump    dmp2 all custom 5000 post2/liggghts_*.csv id type type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius c_5 f_Temp f_Sdim f_Swratio f_alpha f_tdelayelapsed f_iradi mass density
+ 
+
+run 5000000
+
+
+
+

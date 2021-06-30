@@ -1,0 +1,71 @@
+echo            both
+log             log.liggghts
+thermo_log      thermo.txt
+
+atom_style      granular
+atom_modify     map array
+communicate     single vel yes
+
+boundary        f f f
+newton          off
+
+units           si
+
+
+region 		mybox prism  	-2 2 -2 2 -2 2  0 0 0 units box
+create_box 1 mybox
+create_atoms 1 single 0.02 0.0045 0
+create_atoms 1 single -0.02 -0.0045 0 
+set atom 1 type 1 vx -1 vy 0 vz 0 diameter 0.01 density 1000
+set atom 2 type 1 vx 1 vy 0 vz 0 diameter 0.01 density 1000
+
+
+
+neighbor        0.02 bin
+neigh_modify    delay 0
+
+
+# Material properties required for granular pair styles
+
+fix         m1 all property/global youngsModulus peratomtype 5.e7  
+fix         m2 all property/global poissonsRatio peratomtype 0.45 
+fix         m3 all property/global coefficientRestitution peratomtypepair 1 0.3 
+fix         m4 all property/global coefficientFriction peratomtypepair 1 0.5 
+fix 		m7 all property/global minSeparationDistanceRatio scalar 1.01
+fix 		m8 all property/global maxSeparationDistanceRatio scalar 1.1
+fix 		m9 all property/global fluidViscosity scalar 50
+
+#fix 		m16 all property/global bmin scalar 0.000001
+#fix 		m17 all property/global bmax scalar 0.00001
+#fix 		m18 all property/global shc scalar 1000
+
+
+# pair style
+pair_style  gran model hertz tangential history cohesion LUBRICATION Shear_term on Squeeze_term on Pump_term on Activate_torque on flagVF off FLD off
+pair_coeff  * *
+
+# timestep, gravity
+timestep    0.000001
+#velocity all zero angular
+fix         gravi all gravity 0.00 vector 0.0 0.0 1.0
+
+
+
+# apply nve integration to all particles that are inserted as single particles
+fix     integr all nve/sphere
+
+# screen output
+
+#fix 200 all deform 1 xy erate 0.1 remap v
+# insert the first particles so that dump is not empty
+thermo 1000
+
+run		1
+
+dump dmp all custom/vtk 100 post1/Test_Liggghts*.vtk id type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius tqx tqy tqz
+dump dmp2 all custom 100 post2/Test*.liggghts id type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius tqx tqy tqz
+
+run 50000
+
+
+
