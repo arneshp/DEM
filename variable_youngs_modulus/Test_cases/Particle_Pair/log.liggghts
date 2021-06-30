@@ -1,0 +1,174 @@
+thermo_log      thermo.txt
+
+atom_style      granular
+atom_modify     map array
+communicate     single vel yes
+
+boundary        f f f
+newton          off
+
+units           si
+
+
+region 		mybox prism  	-2 2 -2 2 -2 2  0 0 0 units box
+create_box 1 mybox
+Created triclinic box = (-2 -2 -2) to (2 2 2) with tilt (0 0 0)
+  1 by 1 by 1 MPI processor grid
+create_atoms 1 single 0.02 0.0045 0
+Created 1 atoms
+create_atoms 1 single -0.02 -0.0045 0
+Created 1 atoms
+
+set atom 1 type 1 vx -1 vy 0 vz 0 diameter 0.01 density 1000
+  1 settings made for type
+  1 settings made for vx
+  1 settings made for vy
+  1 settings made for vz
+  1 settings made for diameter
+  1 settings made for density
+set atom 2 type 1 vx 1 vy 0 vz 0 diameter 0.01 density 1000
+  1 settings made for type
+  1 settings made for vx
+  1 settings made for vy
+  1 settings made for vz
+  1 settings made for diameter
+  1 settings made for density
+
+
+neighbor        0.01 bin
+neigh_modify    delay 0
+
+soft_particles yes
+
+# Material properties required for granular pair styles
+
+fix        m1l all property/global youngsModuluslow peratomtype 2000
+fix 	   m1h	all property/global youngsModulushigh peratomtype 1.e9
+
+fix m1 all property/global youngsModulus peratomtype 2000
+
+fix         m2 all property/global poissonsRatio peratomtype 0.45
+fix         m3 all property/global coefficientRestitution peratomtypepair 1 0.3
+fix         m4 all property/global coefficientFriction peratomtypepair 1 0.5
+
+fix Sdim all property/atom Sdim scalar yes yes no 0.
+
+
+# pair style
+pair_style  gran model hertz tangential history
+pair_coeff  * *
+
+# timestep, gravity
+timestep    0.000001
+#velocity all zero angular
+fix         gravi all gravity 0.00 vector 0.0 0.0 1.0
+
+
+# apply nve integration to all particles that are inserted as single particles
+fix     integr all nve/sphere
+
+
+# screen output
+
+compute 1 all erotate/sphere
+compute 3 all temp
+compute 4 all pressure 3 virial #fix
+compute f all pressure 3 fix
+
+compute 5 all stress/atom
+thermo_style custom step atoms c_4[4] c_f[4] vol ke
+
+thermo_modify lost ignore norm no
+compute_modify thermo_temp dynamic yes
+WARNING: Changing thermo_temp compute object. This object is deprecated and will be removed in the future. (../compute.cpp:161)
+
+
+
+#fix 200 all deform 1 xy erate 10 remap v
+# insert the first particles so that dump is not empty
+thermo 1000
+
+#run		0
+
+dump dmp all custom/vtk 100 post4/Test_Liggghts*.vtk id type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius tqx tqy tqz
+dump dmp2 all custom 100 post4/Test*.liggghts id type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius tqx tqy tqz c_5[4]
+
+run 50000
+Setting up run at Wed Jun 30 16:58:16 2021
+
+Memory usage per processor = 268.123 Mbytes
+    Step    Atoms           4[4]           f[4]         Volume         KinEng 
+       0        2              0              0             64  0.00052359878 
+    1000        2              0              0             64  0.00052359878 
+    2000        2              0              0             64  0.00052359878 
+    3000        2              0              0             64  0.00052359878 
+    4000        2              0              0             64  0.00052359878 
+    5000        2              0              0             64  0.00052359878 
+    6000        2              0              0             64  0.00052359878 
+    7000        2              0              0             64  0.00052359878 
+    8000        2              0              0             64  0.00052359878 
+    9000        2              0              0             64  0.00052359878 
+   10000        2              0              0             64  0.00052359878 
+   11000        2              0              0             64  0.00052359878 
+   12000        2              0              0             64  0.00052359878 
+   13000        2              0              0             64  0.00052359878 
+   14000        2              0              0             64  0.00052359878 
+   15000        2              0              0             64  0.00052359878 
+   16000        2              0              0             64  0.00052359878 
+   17000        2              0              0             64  0.00052359878 
+   18000        2  1.0199189e-07              0             64  0.00051704082 
+   19000        2  2.7361343e-07              0             64  0.00046057861 
+   20000        2  8.4142872e-09              0             64  0.00045297476 
+   21000        2  1.1502752e-08              0             64  0.00043381104 
+   22000        2  1.5130816e-07              0             64  0.00039191045 
+   23000        2              0              0             64  0.00038122435 
+   24000        2              0              0             64  0.00038122435 
+   25000        2              0              0             64  0.00038122435 
+   26000        2              0              0             64  0.00038122435 
+   27000        2              0              0             64  0.00038122435 
+   28000        2              0              0             64  0.00038122435 
+   29000        2              0              0             64  0.00038122435 
+   30000        2              0              0             64  0.00038122435 
+   31000        2              0              0             64  0.00038122435 
+   32000        2              0              0             64  0.00038122435 
+   33000        2              0              0             64  0.00038122435 
+   34000        2              0              0             64  0.00038122435 
+   35000        2              0              0             64  0.00038122435 
+   36000        2              0              0             64  0.00038122435 
+   37000        2              0              0             64  0.00038122435 
+   38000        2              0              0             64  0.00038122435 
+   39000        2              0              0             64  0.00038122435 
+   40000        2              0              0             64  0.00038122435 
+   41000        2              0              0             64  0.00038122435 
+   42000        2              0              0             64  0.00038122435 
+   43000        2              0              0             64  0.00038122435 
+   44000        2              0              0             64  0.00038122435 
+   45000        2              0              0             64  0.00038122435 
+   46000        2              0              0             64  0.00038122435 
+   47000        2              0              0             64  0.00038122435 
+   48000        2              0              0             64  0.00038122435 
+   49000        2              0              0             64  0.00038122435 
+   50000        2              0              0             64  0.00038122435 
+Loop time of 1.79564 on 1 procs for 50000 steps with 2 atoms, finish time Wed Jun 30 16:58:18 2021
+
+
+Pair  time (%) = 0.00862852 (0.480525)
+Neigh time (%) = 0.501465 (27.9268)
+Comm  time (%) = 1.07329 (59.7717)
+Outpt time (%) = 0.200237 (11.1513)
+Other time (%) = 0.0120264 (0.669753)
+
+Nlocal:    2 ave 2 max 2 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 0
+Ave neighs/atom = 0
+Neighbor list builds = 9
+Dangerous builds = 0
+
+
+
