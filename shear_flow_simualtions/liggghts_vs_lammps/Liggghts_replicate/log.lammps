@@ -1,0 +1,5 @@
+LAMMPS (20 Nov 2019)
+
+atom_style granular
+ERROR: Unrecognized atom style 'granular' (../atom.cpp:509)
+Last command: atom_style granular

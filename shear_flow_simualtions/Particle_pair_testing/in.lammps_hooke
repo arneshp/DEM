@@ -1,0 +1,60 @@
+##############################################################
+
+
+atom_style       sphere
+comm_modify mode single vel yes
+newton off
+
+boundary 		f f f
+units 		si 
+
+
+region 		mybox prism  	-0 10 -0 10 -0 10  0 0 0 units box
+create_box 1 mybox
+create_atoms 1 single 3 4.75 0
+create_atoms 1 single 7 5.25 0 
+ 
+
+
+
+set atom 1 type 1 vx 0.2 vy 0 vz 0 diameter 1 density 1000
+set atom 2 type 1 vx -0.2 vy 0 vz 0 diameter 1 density 1000
+
+
+neighbor 1 bin
+neigh_modify delay 0
+
+pair_style hybrid/overlay gran/hooke 10000 0 200 0 0 0 lubricate/poly 0.1 1 1 1.001 1.05
+
+#pair_style gran/hooke 10000 0 200 0 0 0
+#pair_coeff * *
+
+pair_coeff * *  gran/hooke
+pair_coeff * * lubricate/poly
+
+
+timestep 0.0001 
+
+
+fix 1 all nve/sphere
+
+#compute       attribute_atom all property/atom x vx vy fx fy
+
+compute 1 all erotate/sphere
+compute 3 all temp/profile 1 0 0 y 10
+compute 4 all pressure 3
+thermo_style custom step atoms c_4[4] vol ke
+
+thermo_modify lost ignore norm no
+compute_modify thermo_temp dynamic yes
+
+fix 200 all deform 1 xy erate 10 remap v
+thermo 1000
+
+run		1
+
+dump dmp all custom 100 post/Test*.lammps id type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius tqx tqy tqz
+run 50000
+
+
+

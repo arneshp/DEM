@@ -1,0 +1,77 @@
+echo            both
+log             log.liggghts
+thermo_log      thermo.txt
+
+atom_style      granular
+atom_modify     map array
+communicate     single vel yes
+
+boundary        f f f
+newton          off
+
+units           si
+
+
+region 		mybox prism  	-0 10 -0 10 -0 10  0 0 0 units box
+create_box 1 mybox
+create_atoms 1 single 3 4.75 0
+create_atoms 1 single 7 5.25 0 
+
+set atom 1 type 1 vx 0.2 vy 0 vz 0 diameter 1 density 1000
+set atom 2 type 1 vx -0.2 vy 0 vz 0 diameter 1 density 1000
+
+
+neighbor        1 bin
+neigh_modify    delay 0
+
+
+# Material properties required for granular pair styles
+
+fix m1 all property/global kn peratomtypepair 1 10000.0 
+fix m2 all property/global kt peratomtypepair 1 0 
+fix m3 all property/global gamman peratomtypepair 1 200.0 
+fix m4 all property/global gammat peratomtypepair 1 0
+
+# pair style
+pair_style  gran model hooke/stiffness 
+pair_coeff  * *
+
+# timestep, gravity
+timestep 0.0001  
+
+fix         gravi all gravity 0.00 vector 0.0 0.0 1.0
+
+fix Lub1 all LubricationFLD mu 0.1 flagfld 1 cutinner 1.001 cutoff 1.05 flagVF 1 # Lubrication contact model.
+
+# apply nve integration to all particles that are inserted as single particles
+fix     integr all nve/sphere
+
+
+# screen output
+
+compute 1 all erotate/sphere
+compute 3 all temp/profile 1 0 0 y 10
+compute 4 all pressure 3 #fix
+compute f all pressure 3 fix
+
+compute 5 all stress/atom
+thermo_style custom step atoms c_4[4] c_f[4] vol ke
+
+thermo_modify lost ignore norm no
+compute_modify thermo_temp dynamic yes
+
+
+
+fix 200 all deform 1 xy erate 10 remap v
+# insert the first particles so that dump is not empty
+thermo 1000
+
+#run		0
+
+dump dmp all custom/vtk 100 post3/Test_Liggghts*.vtk id type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius tqx tqy tqz
+dump dmp2 all custom 100 post3/Test*.liggghts id type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius tqx tqy tqz c_5[4]
+
+run 50000
+
+
+

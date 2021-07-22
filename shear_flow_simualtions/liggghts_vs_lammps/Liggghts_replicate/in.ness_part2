@@ -1,0 +1,69 @@
+echo            both
+log             log_shearrate100.liggghts
+thermo_log      thermo_shearrate100.txt
+
+atom_style granular 
+atom_modify map array
+boundary p p p
+newton off
+
+communicate single vel yes
+
+units cgs 
+
+read_data particle.data
+
+
+
+neighbor 0.2 bin 
+neigh_modify delay 0
+
+
+# Material properties required for granular pair styles
+
+fix m1 all property/global kn peratomtypepair 2 10000.0 10000.0 10000.0 10000.0
+fix m2 all property/global kt peratomtypepair 2 0 0 0 0
+fix m3 all property/global gamman peratomtypepair 2 200.0 200.0 200.0 200.0
+fix m4 all property/global gammat peratomtypepair 2 0 0 0 0
+
+
+
+
+# pair style
+pair_style  gran model hooke/stiffness #tangential history # Hooke model like in lammps
+pair_coeff  * *
+
+timestep 0.0001
+
+
+velocity all zero linear
+velocity all zero angular
+
+#fix Lub1 all LubricationFLD mu 0.1 flagfld 1 cutinner 1.001 cutoff 1.05 flagVF 1 # Lubrication contact model.
+
+fix     integr all nve/sphere
+
+
+#deformation of the box
+fix boxDeform all deform 1 xy erate 100 remap v
+
+
+# screen output
+compute 1 all erotate/sphere
+compute 3 all temp/profile 1 0 0 y 20
+compute tot all pressure 3
+compute f all pressure 3 fix
+compute mvv all pressure 3 ke
+compute pairc all pressure 3 pair
+
+thermo_style custom step atoms c_tot[4] c_pairc[4] c_f[4] c_mvv[4] vol ke
+thermo 100
+thermo_modify lost ignore norm no
+compute_modify thermo_temp dynamic yes
+
+
+dump    dmp all custom/vtk 500 post2/liggghts_part2_*.vtk id type type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius 
+
+dump    dmp2 all custom 500 post2/liggghts_*.dump id type type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius 
+
+run 50000

@@ -1,0 +1,71 @@
+
+atom_style granular
+atom_modify map array
+communicate single vel yes
+
+boundary p p p
+newton off
+
+units cgs
+ 
+region reg block 0 10 0 10 0 10 units box
+create_box 2 reg
+
+
+lattice sc 1
+create_atoms 1 random 500 49979687 NULL
+create_atoms 2 random 500 32452867 NULL
+set type 1 diameter 1.0
+set type 2 diameter 1.0
+
+neighbor 0.2 bin
+neigh_modify delay 0
+
+
+# Material properties required for granular pair styles
+
+fix m1 all property/global kn peratomtypepair 2 10000.0 10000.0 10000.0 10000.0
+fix m2 all property/global kt peratomtypepair 2 0 0 0 0
+fix m3 all property/global gamman peratomtypepair 2 200.0 200.0 200.0 200.0
+fix m4 all property/global gammat peratomtypepair 2 0 0 0 0
+#fix m5 all property/global gamman_abs peratomtypepair 2 200 200 200 200
+#fix m6 all property/global gammat_abs peratomtypepair 2 200 200 200 200
+
+
+
+
+# pair style
+pair_style  gran model hooke/stiffness #absolute_damping on tangential_damping off #tangential history # Hooke model like in lammps
+pair_coeff  * *
+
+
+timestep 0.0001
+
+#group p1 type 1 
+#group p2 type 2
+
+#velocity p1 set 4 4.0 -4 dist gaussian
+#velocity p2 set -4.0 -4.0 4.0 dist gaussian
+
+fix     integr all nve/sphere
+
+# screen output
+compute 1 all erotate/sphere
+compute 3 all temp
+compute 4 all pressure 3
+thermo_style custom step atoms c_4 vol ke
+thermo 1000
+thermo_modify lost ignore norm no
+compute_modify thermo_temp dynamic yes
+
+#dump commands to come here.
+# insert the first particles so that dump is not empty
+run     1
+dump    dmp all custom/vtk 5000 post/liggghts_init*.vtk id type type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius 
+
+dump	dmp2 all custom 500000 post/pConfig*.dump id type diameter density x y z
+
+
+
+run 500000
+write_restart restart.restart

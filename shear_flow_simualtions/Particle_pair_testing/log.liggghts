@@ -1,0 +1,175 @@
+thermo_log      thermo.txt
+
+atom_style      granular
+atom_modify     map array
+communicate     single vel yes
+
+boundary        f f f
+newton          off
+
+units           si
+
+
+region 		mybox prism  	-0 10 -0 10 -0 10  0 0 0 units box
+create_box 1 mybox
+Created triclinic box = (-0 -0 -0) to (10 10 10) with tilt (0 0 0)
+  2 by 2 by 5 MPI processor grid
+create_atoms 1 single 3 4.75 0
+Created 1 atoms
+create_atoms 1 single 7 5.25 0
+Created 1 atoms
+
+set atom 1 type 1 vx 0.2 vy 0 vz 0 diameter 1 density 1000
+  1 settings made for type
+  1 settings made for vx
+  1 settings made for vy
+  1 settings made for vz
+  1 settings made for diameter
+  1 settings made for density
+set atom 2 type 1 vx -0.2 vy 0 vz 0 diameter 1 density 1000
+  1 settings made for type
+  1 settings made for vx
+  1 settings made for vy
+  1 settings made for vz
+  1 settings made for diameter
+  1 settings made for density
+
+
+neighbor        1 bin
+neigh_modify    delay 0
+
+
+# Material properties required for granular pair styles
+
+fix m1 all property/global kn peratomtypepair 1 10000.0
+fix m2 all property/global kt peratomtypepair 1 0
+fix m3 all property/global gamman peratomtypepair 1 200.0
+fix m4 all property/global gammat peratomtypepair 1 0
+
+# pair style
+pair_style  gran model hooke/stiffness
+WARNING: 
+	The contact model you specified is not located in any whitelist.
+	Because of this the model will be run in an unoptimized version (increasing runtime by up to 20%).
+	In order to optimize this model you have the following options:
+		(i)  Run the genAutoExamplesWhitelist.sh script in your LIGGGHTS(R) source folder to automatically parse the input script
+		(ii) Add the model combination by hand to your style_contact_model_user.whitelist that can be found in your LIGGGHTS(R) source folder
+	If you perform one of the steps above LIGGGHTS(R) needs to be recompiled to generate the optimized code.
+
+ (../contact_models.h:364)
+pair_coeff  * *
+
+# timestep, gravity
+timestep 0.0001
+
+fix         gravi all gravity 0.00 vector 0.0 0.0 1.0
+
+fix Lub1 all LubricationFLD mu 0.1 flagfld 1 cutinner 1.001 cutoff 1.05 flagVF 1 # Lubrication contact model.
+
+# apply nve integration to all particles that are inserted as single particles
+fix     integr all nve/sphere
+
+
+# screen output
+
+compute 1 all erotate/sphere
+compute 3 all temp/profile 1 0 0 y 10
+compute 4 all pressure 3 #fix
+compute f all pressure 3 fix
+
+compute 5 all stress/atom
+thermo_style custom step atoms c_4[4] c_f[4] vol ke
+
+thermo_modify lost ignore norm no
+compute_modify thermo_temp dynamic yes
+WARNING: Changing thermo_temp compute object. This object is deprecated and will be removed in the future. (../compute.cpp:161)
+
+
+
+fix 200 all deform 1 xy erate 10 remap v
+# insert the first particles so that dump is not empty
+thermo 1000
+
+#run		0
+
+dump dmp all custom/vtk 100 post3/Test_Liggghts*.vtk id type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius tqx tqy tqz
+dump dmp2 all custom 100 post3/Test*.liggghts id type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius tqx tqy tqz c_5[4]
+
+run 50000
+Setting up run at Thu Jul 22 14:27:48 2021
+
+Memory usage per processor = 4.15506 Mbytes
+    Step    Atoms           4[4]           f[4]         Volume         KinEng 
+       0        2              0              0           1000      20.943951 
+    1000        2  -0.0026279532  -0.0026279532           1000      20.884661 
+    2000        2  -0.0026279532  -0.0026279532           1000      20.910848 
+    3000        2  -0.0026279532  -0.0026279532           1000      21.022515 
+    4000        2  -0.0026279532  -0.0026279532           1000      21.219618 
+    5000        2  -0.0026279532  -0.0026279532           1000      21.502109 
+    6000        2  -0.0026279532  -0.0026279532           1000      21.869942 
+    7000        2  -0.0026279532  -0.0026279532           1000      22.323072 
+    8000        2  -0.0026279532  -0.0026279532           1000      22.861452 
+    9000        2  -0.0026279532  -0.0026279532           1000      23.485035 
+   10000        2  -0.0026279532  -0.0026279532           1000      24.193776 
+   11000        2  -0.0026279532  -0.0026279532           1000      24.987628 
+   12000        2  -0.0026279532  -0.0026279532           1000      25.866546 
+   13000        2  -0.0026279532  -0.0026279532           1000      26.830482 
+   14000        2  -0.0026279532  -0.0026279532           1000      27.879392 
+   15000        2  -0.0026279532  -0.0026279532           1000      29.013229 
+   16000        2  -0.0026279532  -0.0026279532           1000      30.231947 
+   17000        2  -0.0026279532  -0.0026279532           1000        31.5355 
+   18000        2  -0.0026279532  -0.0026279532           1000      32.923841 
+   19000        0              0              0           1000              0 
+   20000        0              0              0           1000              0 
+   21000        0              0              0           1000              0 
+   22000        0              0              0           1000              0 
+   23000        0              0              0           1000              0 
+   24000        0              0              0           1000              0 
+   25000        0              0              0           1000              0 
+   26000        0              0              0           1000              0 
+   27000        0              0              0           1000              0 
+   28000        0              0              0           1000              0 
+   29000        0              0              0           1000              0 
+   30000        0              0              0           1000              0 
+   31000        0              0              0           1000              0 
+   32000        0              0              0           1000              0 
+   33000        0              0              0           1000              0 
+   34000        0              0              0           1000              0 
+   35000        0              0              0           1000              0 
+   36000        0              0              0           1000              0 
+   37000        0              0              0           1000              0 
+   38000        0              0              0           1000              0 
+   39000        0              0              0           1000              0 
+   40000        0              0              0           1000              0 
+   41000        0              0              0           1000              0 
+   42000        0              0              0           1000              0 
+   43000        0              0              0           1000              0 
+   44000        0              0              0           1000              0 
+   45000        0              0              0           1000              0 
+   46000        0              0              0           1000              0 
+   47000        0              0              0           1000              0 
+   48000        0              0              0           1000              0 
+   49000        0              0              0           1000              0 
+   50000        0              0              0           1000              0 
+Loop time of 0.636414 on 20 procs for 50000 steps with 0 atoms, finish time Thu Jul 22 14:27:49 2021
+
+
+Pair  time (%) = 0.0108828 (1.71001)
+Neigh time (%) = 9.58061e-05 (0.015054)
+Comm  time (%) = 0.0388237 (6.10038)
+Outpt time (%) = 0.286029 (44.9438)
+Other time (%) = 0.300583 (47.2308)
+
+Nlocal:    0 ave 0 max 0 min
+Histogram: 20 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 20 0 0 0 0 0 0 0 0 0
+Neighs:    0 ave 0 max 0 min
+Histogram: 20 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 0
+Neighbor list builds = 1
+Dangerous builds = 0
+
+
+
