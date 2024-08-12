@@ -1,4 +1,7 @@
 /* ----------------------------------------------------------------------
+    Code implementation done by: Arnesh Palanisamy, arneshpalanisamy@gmail.com
+   These files are a fork from the LIGGGHTS who's main developers are DCS computing Gmbh 
+    
     This is the
 
     ██╗     ██╗ ██████╗  ██████╗  ██████╗ ██╗  ██╗████████╗███████╗
